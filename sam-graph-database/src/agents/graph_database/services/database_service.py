@@ -3,13 +3,10 @@
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from typing import List, Dict, Any, Generator, Optional
-# modules like sqlalchemy-neo4j, py2neo and metabase-neo4j-driver are not an option as these are EOL/abandoned so use official Neo4j module, might use neomodel
+# modules like sqlalchemy-neo4j, py2neo and metabase-neo4j-driver are not an option as these are EOL/abandoned
+# so use official Neo4j module, might use neomodel
 from neo4j import GraphDatabase, Driver, Session
 from neo4j.exceptions import Neo4jError
-import sqlalchemy as sa
-#from sqlalchemy.engine import Engine
-from sqlalchemy.exc import Neo4jError
-from sqlalchemy import inspect, text
 
 from solace_ai_connector.common.log import log
 
@@ -85,7 +82,7 @@ class DatabaseService(ABC):
         """
         try:
             with self.get_session() as session:
-                result = session.run(text(query))
+                result = session.run(query)
                 return list(result.mappings())
         except Neo4jError as e:
             log.error("Query execution error: %s", str(e), exc_info=True)

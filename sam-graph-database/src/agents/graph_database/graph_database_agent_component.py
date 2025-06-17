@@ -255,7 +255,7 @@ class GraphDatabaseAgentComponent(BaseAgentComponent):
         }
 
         if self.db_type in ("neo4j"):
-            # Add connection parameters needed for MySQL/PostgreSQL
+            # Add connection parameters needed for Neo4j
             connection_params.update({
                 "host": self.get_config("host"),
                 "port": self.get_config("port"),
