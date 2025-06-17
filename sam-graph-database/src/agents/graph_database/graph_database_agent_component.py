@@ -5,6 +5,7 @@ import copy
 import sys
 from typing import Dict, Any, Optional, List
 import yaml
+import json
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
@@ -21,18 +22,7 @@ from .services.database_service import (
 )
 from .actions.search_query import SearchQuery
 
-# NOTE: commented sample code
-# # Sample action import
-# from graph_database.actions.sample_action import SampleAction
-
 info = copy.deepcopy(agent_info)
-# info["agent_name"] = "graph_database"
-# info["class_name"] = "GraphDatabaseAgentComponent"
-# info["description"] = (
-#     "This agent handles ... It should be used "
-#     "when an user explicitly requests information ... "
-# )
-
 info.update(
     {
         "agent_name": "graph_database",
@@ -264,7 +254,7 @@ class GraphDatabaseAgentComponent(BaseAgentComponent):
             "database": self.get_config("database"),
         }
 
-        if self.db_type in ("mysql", "postgres"):
+        if self.db_type in ("neo4j"):
             # Add connection parameters needed for MySQL/PostgreSQL
             connection_params.update({
                 "host": self.get_config("host"),
@@ -273,58 +263,37 @@ class GraphDatabaseAgentComponent(BaseAgentComponent):
                 "password": self.get_config("password"),
             })
 
-        if self.db_type == "mysql":
-            return MySQLService(connection_params, query_timeout=self.query_timeout)
-        elif self.db_type == "postgres":
-            return PostgresService(connection_params, query_timeout=self.query_timeout)
-        elif self.db_type in ("sqlite", "sqlite3"):
-            return SQLiteService(connection_params, query_timeout=self.query_timeout)
+        if self.db_type == "neo4j":
+            return Neo4jService(connection_params, query_timeout=self.query_timeout)
+        elif self.db_type in ("TBD", "anotherTBDGraphDB"):
+            return TBDService(connection_params, query_timeout=self.query_timeout)
         else:
             raise ValueError(f"Unsupported database type: {self.db_type}")
 
     def _detect_schema(self) -> Dict[str, Any]:
-        """Detect database schema including tables, columns, relationships and sample data.
-        
+        """Detect database schema including distinct node types (labels), distinct relationship types, keys used in nodes/relationship and sample data.
+
         Returns:
             Dictionary containing detailed schema information
         """
-        schema = {}
-        tables = self.db_handler.get_tables()
-        
-        for table in tables:
-            table_info = {
-                "columns": {},
-                "primary_keys": self.db_handler.get_primary_keys(table),
-                "foreign_keys": self.db_handler.get_foreign_keys(table),
-                "indexes": self.db_handler.get_indexes(table)
-            }
-            
-            # Get detailed column information
-            columns = self.db_handler.get_columns(table)
-            for col in columns:
-                col_name = col["name"]
-                table_info["columns"][col_name] = {
-                    "type": str(col["type"]),
-                    "nullable": col.get("nullable", True),
-                }
-                
-                # Get sample values and statistics for the column
-                try:
-                    unique_values = self.db_handler.get_unique_values(table, col_name)
-                    if unique_values:
-                        table_info["columns"][col_name]["sample_values"] = unique_values
 
-                    stats = self.db_handler.get_column_stats(table, col_name)
-                    if stats:
-                        table_info["columns"][col_name]["statistics"] = stats
-                except Exception:
-                    # Skip sample data if there's an error
-                    pass
+        schema = {
+            "labels": [],
+            "relationship_types": [],
+            "property_keys": []
+        }
 
-            schema[table] = table_info
+        with self.driver.session() as session:
+            schema["labels"] = self._run_query(session, "CALL db.labels()", "label")
+            schema["relationship_types"] = self._run_query(session, "CALL db.relationshipTypes()", "relationshipType")
+            schema["property_keys"] = self._run_query(session, "CALL db.propertyKeys()", "propertyKey")
 
         return schema
 
+    def _run_query(self, session, query: str, key: str) -> list:
+        result = session.run(query)
+        return [record[key] for record in result]
+    
     def _clean_schema(self, schema_dict: Dict[str, Any]) -> Dict[str, Any]:
         """Clean the schema dictionary by removing problematic fields.
         
@@ -334,10 +303,7 @@ class GraphDatabaseAgentComponent(BaseAgentComponent):
         Returns:
             Cleaned schema dictionary
         """
-        for table, table_data in schema_dict.items():
-            for column, column_data in table_data["columns"].items():
-                # Remove problematic fields (if they exist)
-                column_data.pop("statistics", None)
+        schema_dict = {}
         return schema_dict
 
     def _get_schema_summary(self) -> str:
@@ -358,11 +324,7 @@ class GraphDatabaseAgentComponent(BaseAgentComponent):
             raise ValueError(f"Error: Failed to parse schema. Invalid YAML format. Details: {exc}") from exc
 
         # Construct summary lines
-        summary_lines = []
-        for table_name, table_info in schema_dict.items():
-            columns = table_info.get("columns")
-            if isinstance(columns, dict):
-                summary_lines.append(f"{table_name}: {', '.join(columns.keys())}")
+        summary_lines = json.dumps(schema_dict, separators=(",", ":"))
 
         return "\n".join(summary_lines)
 
@@ -399,8 +361,3 @@ class GraphDatabaseAgentComponent(BaseAgentComponent):
     def get_db_handler(self) -> DatabaseService:
         """Get the database handler instance."""
         return self.db_handler
-
-# class GraphDatabaseAgentComponent(BaseAgentComponent):
-#     info = info
-#     # sample action
-#     actions = [SampleAction]
