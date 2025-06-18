@@ -6,12 +6,12 @@ build-backend = "hatchling.build"
 allow-direct-references = true
 
 [project]
-name = "sam-graph-database"
+name = "sam_graph_database"
 dynamic = ["version"]
 authors = [
   { name="Emil Zegers", email="emil.zegers@solace.com" },
 ]
-description = "A plugin that provides graph database query capabilities with natural language processing. Supports Neo4j databases."
+description = "A plugin that provides graph database query capabilities with natural language processing. Supports Neo4j and TBD databases."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

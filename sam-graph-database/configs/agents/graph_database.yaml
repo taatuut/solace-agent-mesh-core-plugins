@@ -26,9 +26,8 @@ shared_config:
       temporary_queue: ${USE_TEMPORARY_QUEUES, false}
 
 flows:
-
   # Flow to handle action requests
-  - name: graph_database_action_request_processor
+  - name: {{SNAKE_CASE_NAME}}_action_request_processor
     components:
       # Input from a Solace broker
       - component_name: broker_input
@@ -39,21 +38,27 @@ flows:
           payload_format: json
           broker_queue_name: ${SOLACE_AGENT_MESH_NAMESPACE}agent_graph_database_action_request
           broker_subscriptions:
-            # Subscribe to all graph_database actions - note that if we
-            # wanted to handle some graph_database actions elsewhere, we would
-            # need to be more specific here
-            - topic: ${SOLACE_AGENT_MESH_NAMESPACE}solace-agent-mesh/v1/actionRequest/*/*/graph_database/>
+            - topic: ${SOLACE_AGENT_MESH_NAMESPACE}solace-agent-mesh/v1/actionRequest/*/*/{{SNAKE_CASE_NAME}}/>
               qos: 1
 
       # Custom component to process the action request
       - component_name: action_request_processor
-        component_base_path: .
          # path is completed at build time
         component_module: {{MODULE_DIRECTORY}}.agents.graph_database.graph_database_agent_component
         component_config:
           llm_service_topic: ${SOLACE_AGENT_MESH_NAMESPACE}solace-agent-mesh/v1/llm-service/request/general-good/
           embedding_service_topic: ${SOLACE_AGENT_MESH_NAMESPACE}solace-agent-mesh/v1/embedding-service/request/text/
-          # Pass required configuration to the component
+          agent_name: {{SNAKE_CASE_NAME}}
+          db_type: ${{{SNAKE_UPPER_CASE_NAME}}_DB_TYPE}
+          host: ${{{SNAKE_UPPER_CASE_NAME}}_DB_HOST}
+          port: ${{{SNAKE_UPPER_CASE_NAME}}SQL_DB_PORT}
+          user: ${{{SNAKE_UPPER_CASE_NAME}}_DB_USER}
+          password: ${{{SNAKE_UPPER_CASE_NAME}}_DB_PASSWORD}
+          database: ${{{SNAKE_UPPER_CASE_NAME}}_DB_NAME}
+          query_timeout: ${{{SNAKE_UPPER_CASE_NAME}}_QUERY_TIMEOUT, 30}
+          database_purpose: ${{{SNAKE_UPPER_CASE_NAME}}_DB_PURPOSE}
+          data_description: ${{{SNAKE_UPPER_CASE_NAME}}_DB_DESCRIPTION}
+          auto_detect_schema: true
         broker_request_response:
           enabled: true
           broker_config: *broker_connection
