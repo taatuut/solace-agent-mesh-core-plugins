@@ -80,7 +80,7 @@ class DatabaseService(ABC):
         try:
             with self.get_session() as session:
                 result = session.run(query)
-                return list(result.mappings())
+                return result.data()
         except Neo4jError as e:
             log.error("Query execution error: %s", str(e), exc_info=True)
             raise
