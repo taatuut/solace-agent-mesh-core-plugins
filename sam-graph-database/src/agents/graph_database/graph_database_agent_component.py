@@ -284,7 +284,7 @@ class GraphDatabaseAgentComponent(BaseAgentComponent):
             "property_keys": []
         }
 
-        with self.driver.session() as session:
+        with self.db_handler.driver.session() as session:
             schema["labels"] = self._run_query(session, "CALL db.labels()", "label")
             schema["relationship_types"] = self._run_query(session, "CALL db.relationshipTypes()", "relationshipType")
             schema["property_keys"] = self._run_query(session, "CALL db.propertyKeys()", "propertyKey")
