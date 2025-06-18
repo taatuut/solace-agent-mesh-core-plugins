@@ -47,7 +47,7 @@ class DatabaseService(ABC):
         pass
 
     @contextmanager
-    def get_session(self) -> Generator[Session, None, None]:
+    def get_session(self) -> Generator[Driver.session, None, None]: # NOTE: Use Session or Driver.session? Test!
         """Get a database session from the pool.
         
         Yields:
@@ -149,7 +149,7 @@ class Neo4jService(DatabaseService):
     """Neo4j database service implementation."""
 
     def _create_driver(self) -> Driver:
-        """Create Neo4j database engine."""
+        """Create Neo4j database driver."""
         port=self.connection_params.get("port")
         database=self.connection_params.get("database")
         return GraphDatabase.driver(self.connection_params.get("host"), auth=(self.connection_params.get("user"), self.connection_params.get("password")))
@@ -159,7 +159,7 @@ class TBDService(DatabaseService):
     """TBD database service implementation."""
     
     def _create_driver(self) -> Driver:
-        """Create Neo4j database engine."""
+        """Create TBD database driver."""
         port=self.connection_params.get("port")
         database=self.connection_params.get("database")
         return GraphDatabase.driver(self.connection_params.get("host"), auth=(self.connection_params.get("user"), self.connection_params.get("password")))

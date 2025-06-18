@@ -255,8 +255,8 @@ class GraphDatabaseAgentComponent(BaseAgentComponent):
             "database": self.get_config("database"),
         }
 
-        if self.db_type in ("neo4j"):
-            # Add connection parameters needed for Neo4j
+        if self.db_type in ("neo4j", "TBD"):
+            # Add connection parameters needed for Neo4j, TBD
             connection_params.update({
                 "host": self.get_config("host"),
                 "port": self.get_config("port"),
