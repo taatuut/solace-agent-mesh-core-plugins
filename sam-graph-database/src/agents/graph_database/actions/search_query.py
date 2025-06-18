@@ -21,7 +21,6 @@ from solace_agent_mesh.common.action_response import (
 
 MAX_TOTAL_INLINE_FILE_SIZE = 100000  # 100KB
 
-
 class SearchQuery(Action):
     """Action for executing search queries based on natural language prompts."""
 
@@ -31,8 +30,8 @@ class SearchQuery(Action):
             {
                 "name": "search_query",
                 "prompt_directive": (
-                    "Execute one or more search queries on the SQL database. "
-                    "Converts natural language to SQL and returns results. "
+                    "Execute one or more search queries on the Graph database. "
+                    "Converts natural language to GQL (Cypher) and returns results. "
                     "You can include multiple related questions in a single query for more efficient processing. "
                     "Each query will be returned as a separate file. "
                     "NOTE that there is no history stored for previous queries, so it is essential to provide all required context in the query."
@@ -85,20 +84,20 @@ class SearchQuery(Action):
             if response_format not in ["yaml", "json", "csv"]:
                 raise ValueError("Invalid response format. Choose 'yaml', 'json', or 'csv'")
 
-            # Get the SQL queries from the natural language query
-            sql_queries = self._generate_sql_queries(query)
+            # Get the GQL queries from the natural language query
+            gql_queries = self._generate_gql_queries(query)
 
             # Execute each query and collect results
             db_handler = self.get_agent().get_db_handler()
             query_results = []
             failed_queries = []
 
-            for purpose, sql_query in sql_queries:
+            for purpose, gql_query in gql_queries:
                 try:
-                    results = db_handler.execute_query(sql_query)
-                    query_results.append((purpose, sql_query, results))
+                    results = db_handler.execute_query(gql_query)
+                    query_results.append((purpose, gql_query, results))
                 except Exception as e:
-                    failed_queries.append((purpose, sql_query, str(e)))
+                    failed_queries.append((purpose, gql_query, str(e)))
 
             inline_result = params.get("inline_result", True)
             if isinstance(inline_result, str):
@@ -120,16 +119,16 @@ class SearchQuery(Action):
                 error_info=ErrorInfo(str(e)),
             )
 
-    def _generate_sql_queries(
+    def _generate_gql_queries(
         self, natural_language_query: str
     ) -> List[Tuple[str, str]]:
-        """Generate SQL queries from natural language prompt.
+        """Generate GQL queries from natural language prompt.
 
         Args:
             natural_language_query: Natural language description of the query
 
         Returns:
-            List of tuples containing (query_purpose, sql_query)
+            List of tuples containing (query_purpose, gql_query)
 
         Raises:
             ValueError: If query generation fails
@@ -142,8 +141,8 @@ class SearchQuery(Action):
         current_timestamp = datetime.datetime.now().isoformat()
 
         system_prompt = f"""
-You are an SQL expert and will convert the provided natural language query to one or more SQL queries for {db_type}.
-If the user's request requires multiple SQL queries to fully answer, generate all necessary queries.
+You are an GQL (Cypher) expert and will convert the provided natural language query to one or more GQL queries for {db_type}.
+If the user's request requires multiple GQL queries to fully answer, generate all necessary queries.
 Requests should have a clear context to identify the person or entity or use the word "all" to avoid ambiguity.
 It is required to raise an error if the context is missing or ambiguous.
 
@@ -165,9 +164,9 @@ For each query needed to answer the user's request, respond with the following f
 <query_purpose>
 ...Purpose of the query...
 </query_purpose>
-<sql_query>
-...SQL query...
-</sql_query>
+<gql_query>
+...GQL query...
+</gql_query>
 
 If multiple queries are needed, repeat the above format for each query.
 
@@ -178,7 +177,7 @@ Or if the request is invalid, respond with an error message:
 </error>
 
 
-Ensure that all SQL queries are compatible with {db_type}.
+Ensure that all GQL queries are compatible with {db_type}.
 """
 
         messages = [
@@ -194,21 +193,21 @@ Ensure that all SQL queries are compatible with {db_type}.
             if errors:
                 raise ValueError(errors[0])
 
-            sql_queries = self._get_all_tags(content, "sql_query")
+            gql_queries = self._get_all_tags(content, "gql_query")
             purposes = self._get_all_tags(content, "query_purpose")
 
-            if not sql_queries:
-                raise ValueError("Failed to generate SQL query")
+            if not gql_queries:
+                raise ValueError("Failed to generate GQL query")
 
             # Match purposes with queries
-            if len(purposes) != len(sql_queries):
+            if len(purposes) != len(gql_queries):
                 # If counts don't match, use generic purposes
-                purposes = [f"Query {i+1}" for i in range(len(sql_queries))]
+                purposes = [f"Query {i+1}" for i in range(len(gql_queries))]
 
-            return list(zip(purposes, sql_queries))
+            return list(zip(purposes, gql_queries))
 
         except Exception as e:
-            raise ValueError(f"Failed to generate SQL query: {str(e)}")
+            raise ValueError(f"Failed to generate GQL query: {str(e)}")
 
     def _get_all_tags(self, result_text: str, tag_name: str) -> list:
         """Extract content from XML-like tags in the text.
@@ -235,8 +234,8 @@ Ensure that all SQL queries are compatible with {db_type}.
         """Create a response with multiple query results as files.
 
         Args:
-            query_results: List of tuples (purpose, sql_query, results)
-            failed_queries: List of tuples (purpose, sql_query, error_message)
+            query_results: List of tuples (purpose, gql_query, results)
+            failed_queries: List of tuples (purpose, gql_query, error_message)
             response_format: Format for the result files
             inline_result: Whether to return inline files
             meta: Metadata including session_id
@@ -253,25 +252,25 @@ Ensure that all SQL queries are compatible with {db_type}.
 
         if not query_results and not failed_queries:
             return ActionResponse(
-                message="No SQL queries were generated from your request. Please try again with a more specific query.",
+                message="No GQL queries were generated from your request. Please try again with a more specific query.",
             )
 
         # Add summary of successful queries
         if query_results:
             message_parts.append(
-                f"Successfully executed {len(query_results)} SQL queries:"
+                f"Successfully executed {len(query_results)} GQL queries:"
             )
-            for i, (purpose, sql_query, _) in enumerate(query_results, 1):
-                message_parts.append(f"\n{i}. {purpose}\nSQL: ```{sql_query}```")
+            for i, (purpose, gql_query, _) in enumerate(query_results, 1):
+                message_parts.append(f"\n{i}. {purpose}\nGQL: ```{gql_query}```")
 
         # Add summary of failed queries
         if failed_queries:
             message_parts.append(
-                f"\n\nFailed to execute {len(failed_queries)} SQL queries:"
+                f"\n\nFailed to execute {len(failed_queries)} GQL queries:"
             )
-            for i, (purpose, sql_query, error) in enumerate(failed_queries, 1):
+            for i, (purpose, gql_query, error) in enumerate(failed_queries, 1):
                 message_parts.append(
-                    f"\n{i}. {purpose}\nSQL: ```{sql_query}```\nError: {error}"
+                    f"\n{i}. {purpose}\nGQL: ```{gql_query}```\nError: {error}"
                 )
 
         # Create files for each successful query
@@ -279,7 +278,7 @@ Ensure that all SQL queries are compatible with {db_type}.
         inline_files = []
         total_size = 0
 
-        for i, (purpose, sql_query, results) in enumerate(query_results, 1):
+        for i, (purpose, gql_query, results) in enumerate(query_results, 1):
             updated_results = self._stringify_non_standard_objects(results)
 
             # Format the results based on the requested format
@@ -305,7 +304,7 @@ Ensure that all SQL queries are compatible with {db_type}.
             if inline_result:
                 inline_files.append(InlineFile(content, file_name))
             else:
-                data_source = f"SQL Agent - Search Query {i} - {purpose}"
+                data_source = f"GQL Agent - Search Query {i} - {purpose}"
                 file_meta = file_service.upload_from_buffer(
                     content.encode(), file_name, session_id, data_source=data_source
                 )

@@ -113,9 +113,9 @@ class DatabaseService(ABC):
         Returns:
             List of unique values
         """
-        if self.driver.name == 'mysql':
-            # MySQL uses RAND() instead of RANDOM()
-            query = f"SELECT DISTINCT {column} FROM {table} WHERE {column} IS NOT NULL ORDER BY RAND() LIMIT {limit}"
+        if self.driver.name == 'neo4j':
+            # Neo4j uses rand()
+            query = f"MATCH (n) WITH DISTINCT n ORDER BY rand() RETURN n LIMIT {limit}"
         else:
             # TBD uses RANDOM()
             query = f"SELECT DISTINCT {column} FROM {table} WHERE {column} IS NOT NULL ORDER BY RANDOM() LIMIT {limit}"
