@@ -271,7 +271,7 @@ class GraphDatabaseAgentComponent(BaseAgentComponent):
         else:
             raise ValueError(f"Unsupported database type: {self.db_type}")
 
-    def _get_schema(tx):
+    def _get_schema(tx, *args, **kwargs):
         result = tx.run("CALL db.schema.visualization()")
         return result.single()
 
