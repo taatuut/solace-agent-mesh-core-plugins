@@ -271,23 +271,19 @@ class GraphDatabaseAgentComponent(BaseAgentComponent):
         else:
             raise ValueError(f"Unsupported database type: {self.db_type}")
 
+    def _get_schema(tx):
+        result = tx.run("CALL db.schema.visualization()")
+        return result.single()
+
     def _detect_schema(self) -> Dict[str, Any]:
-        """Detect database schema including distinct node types (labels), distinct relationship types, keys used in nodes/relationship and sample data.
+        """Detect database schema including distinct node types (labels), distinct relationship types, keys used in nodes/relationship.
 
         Returns:
             Dictionary containing detailed schema information
         """
 
-        schema = {
-            "labels": [],
-            "relationship_types": [],
-            "property_keys": []
-        }
-
         with self.db_handler.driver.session() as session:
-            schema["labels"] = self._run_query(session, "CALL db.labels()", "label")
-            schema["relationship_types"] = self._run_query(session, "CALL db.relationshipTypes()", "relationshipType")
-            schema["property_keys"] = self._run_query(session, "CALL db.propertyKeys()", "propertyKey")
+            schema = session.read_transaction(self._get_schema)
 
         return schema
 
