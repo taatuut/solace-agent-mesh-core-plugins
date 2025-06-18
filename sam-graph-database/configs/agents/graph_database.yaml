@@ -6,7 +6,7 @@
 #    This requires a custom component to process the action requests
 
 # It also provides:
-# - Natural language to GQL query conversion
+# - Natural language to Cypher query conversion
 # - Query execution against multiple database types (Neo4j, TBD)
 # - Results in multiple formats (YAML, JSON, CSV, Markdown)
 

@@ -113,7 +113,7 @@ info.update(
             {
                 "name": "query_examples",
                 "required": False,
-                "description": "Natural language to GQL query examples to help the agent understand how to query the database. Format: List of objects with 'natural_language' and 'gql_query' keys. Will be attached to the schema when auto_detect_schema is False.",
+                "description": "Natural language to Cypher query examples to help the agent understand how to query the database. Format: List of objects with 'natural_language' and 'cypher_query' keys. Will be attached to the schema when auto_detect_schema is False.",
                 "type": "list",
             },
             {
@@ -214,10 +214,10 @@ class GraphDatabaseAgentComponent(BaseAgentComponent):
                 
                 # Process examples from the list of dictionaries
                 for i, example in enumerate(query_examples, 1):
-                    if isinstance(example, dict) and "natural_language" in example and "gql_query" in example:
+                    if isinstance(example, dict) and "natural_language" in example and "cypher_query" in example:
                         formatted_examples += f"Example {i}:\n"
                         formatted_examples += f"Natural Language: {example['natural_language'].strip()}\n"
-                        formatted_examples += f"GQL Query: {example['gql_query'].strip()}\n\n"
+                        formatted_examples += f"Cypher Query: {example['cypher_query'].strip()}\n\n"
                 
                 # Attach formatted examples to the schema
                 self.detailed_schema = f"{self.detailed_schema}\n\n{formatted_examples}"

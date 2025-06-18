@@ -1,4 +1,4 @@
-"""Service for handling GQL database operations."""
+"""Service for handling Cypher database operations."""
 
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
@@ -47,8 +47,8 @@ class DatabaseService(ABC):
         pass
 
     @contextmanager
-    def get_session(self) -> Generator[Driver.session, None, None]: # NOTE: Use Session or Driver.session? Test!
-        """Get a database session from the pool.
+    def get_session(self) -> Generator[Session, None, None]: # NOTE: Use Session or Driver.session? Test!
+        """Get a database session.
         
         Yields:
             Active database session
@@ -57,7 +57,7 @@ class DatabaseService(ABC):
             Neo4jError: If session fails
         """
         try:
-            session = self._driver.session()
+            session = self.driver.session()
             yield session
         except Neo4jError as e:
             log.error("Database connection error: %s", str(e), exc_info=True)
@@ -65,14 +65,11 @@ class DatabaseService(ABC):
         finally:
             session.close()
 
-    def close(self):
-        self._driver.close()
-
     def execute_query(self, query: str) -> List[Dict[str, Any]]:
-        """Execute a GQL query.
+        """Execute a Cypher query.
         
         Args:
-            query: GQL query to execute
+            query: Cypher query to execute
             
         Returns:
             List of dictionaries containing query results

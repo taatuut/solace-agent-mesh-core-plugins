@@ -2,7 +2,7 @@
 
 A plugin that provides graph database query capabilities with natural language processing. Supports Neo4j databases.
 
-NOTE: While the search action implies that it will not modify the database, it is very important that the credentials to the database for this action are read-only. This is because the natural language processing may not always generate the correct Cypher query and could potentially modify the database. Cypher is Neo4j's declarative and GQL conformant query language.
+NOTE: While the search action implies that it will not modify the database, it is very important that the credentials to the database for this action are read-only. This is because the natural language processing may not always generate the correct Cypher query and could potentially modify the database. Cypher is Neo4j's declarative and Cypher conformant query language.
 
 ## Features
 
@@ -58,13 +58,13 @@ For database connection:
 - **<AGENT_NAME>_AUTO_DETECT_SCHEMA** - Whether to automatically detect schema (optional, default true)
 - **<AGENT_NAME>_DB_SCHEMA** - Database schema text (required if auto_detect_schema is false)
 - **<AGENT_NAME>_SCHEMA_SUMMARY** - Natural language summary of the schema (required if auto_detect_schema is false)
-- **<AGENT_NAME>_QUERY_EXAMPLES** - List of example natural language to GQL conformant query mappings like Cypher for Neo4j (optional)
+- **<AGENT_NAME>_QUERY_EXAMPLES** - List of example natural language to Cypher conformant query mappings like Cypher for Neo4j (optional)
 - **<AGENT_NAME>_RESPONSE_GUIDELINES** - Guidelines to be attached to action responses (optional)
 
 ## Actions
 
 ### search_query
-Execute natural language queries against the Graph database. The query is converted to GQL and results are returned in the specified format.
+Execute natural language queries against the Graph database. The query is converted to Cypher and results are returned in the specified format.
 
 Parameters:
 - **query** (required): Natural language description of the search query
@@ -99,11 +99,11 @@ The agent can handle database schemas in two ways:
    - Provide `SCHEMA_SUMMARY` with a natural language summary
    - Useful when you want to control exactly how the schema is presented to the agent
 
-The schema information helps the LLM generate more accurate GQL queries from natural language.
+The schema information helps the LLM generate more accurate Cypher queries from natural language.
 
 ## Query Examples
 
-The Graph Database agent supports providing example queries to improve natural language to GQL conversion accuracy. This is particularly useful for:
+The Graph Database agent supports providing example queries to improve natural language to Cypher conversion accuracy. This is particularly useful for:
 - Teaching the agent about domain-specific terminology
 - Demonstrating preferred query patterns
 - Improving accuracy for complex queries
@@ -113,7 +113,7 @@ The Graph Database agent supports providing example queries to improve natural l
 
 You can add query examples in your agent's YAML configuration file:
 
-TODO: change query examples in below yaml fragment to GQL/Cypher, see https://neo4j.com/docs/python-manual/current/
+TODO: change query examples in below yaml fragment to Cypher, see https://neo4j.com/docs/python-manual/current/
 
 ```yaml
   # Other configuration...
@@ -123,17 +123,17 @@ TODO: change query examples in below yaml fragment to GQL/Cypher, see https://ne
       # Other configuration...
       query_examples:
         - natural_language: "Show me all employees in the Engineering department"
-          gql_query: "SELECT * FROM employees WHERE department = 'Engineering'"
+          cypher_query: "SELECT * FROM employees WHERE department = 'Engineering'"
         - natural_language: "What are the top 5 highest paid employees?"
-          gql_query: "SELECT name, salary FROM employees ORDER BY salary DESC LIMIT 5"
+          cypher_query: "SELECT name, salary FROM employees ORDER BY salary DESC LIMIT 5"
         - natural_language: "How many orders were placed last month?"
-          gql_query: "SELECT COUNT(*) FROM orders WHERE order_date >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)"
+          cypher_query: "SELECT COUNT(*) FROM orders WHERE order_date >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)"
 ```
 ### Example Format and Usage
 
 Each query example must include:
 1. `natural_language`: The natural language question or request
-2. `gql_query`: The corresponding GQL query that correctly answers the question
+2. `cypher_query`: The corresponding Cypher query that correctly answers the question
 
 The agent will use these examples to better understand how to translate natural language queries into QQL for your specific database schema and domain.
 
