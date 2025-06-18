@@ -271,10 +271,6 @@ class GraphDatabaseAgentComponent(BaseAgentComponent):
         else:
             raise ValueError(f"Unsupported database type: {self.db_type}")
 
-    def _get_schema(tx, *args, **kwargs):
-        result = tx.run("CALL db.schema.visualization()")
-        return result.single()
-
     def _detect_schema(self) -> Dict[str, Any]:
         """Detect database schema including distinct node types (labels), distinct relationship types, keys used in nodes/relationship.
 
@@ -282,8 +278,12 @@ class GraphDatabaseAgentComponent(BaseAgentComponent):
             Dictionary containing detailed schema information
         """
 
+        def get_schema(tx, *args, **kwargs):
+            result = tx.run("CALL db.schema.visualization()")
+            return result.single()
+
         with self.db_handler.driver.session() as session:
-            schema = session.execute_read(self._get_schema)
+            schema = session.execute_read(get_schema)
 
         return schema
 
