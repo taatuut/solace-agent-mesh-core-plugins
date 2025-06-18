@@ -283,7 +283,7 @@ class GraphDatabaseAgentComponent(BaseAgentComponent):
         """
 
         with self.db_handler.driver.session() as session:
-            schema = session.read_transaction(self._get_schema)
+            schema = session.execute_read(self._get_schema)
 
         return schema
 
