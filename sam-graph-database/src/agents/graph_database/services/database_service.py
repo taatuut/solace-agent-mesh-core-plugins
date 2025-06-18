@@ -47,7 +47,7 @@ class DatabaseService(ABC):
         pass
 
     @contextmanager
-    def get_session(self) -> Generator[Session, None, None]: # NOTE: Use Session or Driver.session? Test!
+    def get_session(self) -> Generator[Driver.session, None, None]: # NOTE: Use Session or Driver.session? Test!
         """Get a database session.
         
         Yields:

@@ -34,107 +34,107 @@ info.update(
                 "name": "agent_name",
                 "required": True,
                 "description": "Name of this graph database agent instance",
-                "type": "string",
+                "type": "string"
             },
             {
                 "name": "db_type",
                 "required": True,
                 "description": "Database type (Neo4j, TBD)",
-                "type": "string",
+                "type": "string"
             },
             {
                 "name": "host",
                 "required": False,
                 "description": "Database host (for Neo4j)",
-                "type": "string",
+                "type": "string"
             },
             {
                 "name": "port",
                 "required": False,
                 "description": "Database port (for Neo4j)",
-                "type": "integer",
+                "type": "integer"
             },
             {
                 "name": "user",
                 "required": False,
                 "description": "Database user (for Neo4j)",
-                "type": "string",
+                "type": "string"
             },
             {
                 "name": "password",
                 "required": False,
                 "description": "Database password (for Neo4j)",
-                "type": "string",
+                "type": "string"
             },
             {
                 "name": "database",
                 "required": True,
                 "description": "Database name (or file path for TBD)",
-                "type": "string",
+                "type": "string"
             },
             {
                 "name": "query_timeout",
                 "required": False,
                 "description": "Query timeout in seconds",
                 "type": "integer",
-                "default": 30,
+                "default": 30
             },
             {
                 "name": "database_purpose",
                 "required": True,
                 "description": "Purpose of the database",
-                "type": "string",
+                "type": "string"
             },
             {
                 "name": "data_description",
                 "required": False,
                 "description": "Detailed description of the data held in the database. Will be auto-detected if not provided.",
-                "type": "string",
+                "type": "string"
             },
             {
                 "name": "auto_detect_schema",
                 "required": False,
                 "description": "Automatically create a schema based on the database structure",
                 "type": "boolean",
-                "default": True,
+                "default": True
             },
             {
                 "name": "database_schema",
                 "required": False,
                 "description": "Database schema if auto_detect_schema is False",
-                "type": "string",
+                "type": "string"
             },
             {
                 "name": "schema_summary",
                 "required": False,
                 "description": "Summary of the database schema if auto_detect_schema is False. Will be used in agent description.",
-                "type": "string",
+                "type": "string"
             },
             {
                 "name": "query_examples",
                 "required": False,
                 "description": "Natural language to Cypher query examples to help the agent understand how to query the database. Format: List of objects with 'natural_language' and 'cypher_query' keys. Will be attached to the schema when auto_detect_schema is False.",
-                "type": "list",
+                "type": "list"
             },
             {
                 "name": "csv_files",
                 "required": False,
                 "description": "List of CSV files to import as tables on startup",
-                "type": "list",
+                "type": "list"
             },
             {
                 "name": "csv_directories",
                 "required": False,
                 "description": "List of directories to scan for CSV files to import as tables on startup",
-                "type": "list",
+                "type": "list"
             },
             {
                 "name": "response_guidelines",
                 "required": False,
                 "description": "Guidelines to be attached to action responses. These will be included in the response message.",
-                "type": "string",
+                "type": "string"
             }
-        ],
+        ]
     }
 )
 
