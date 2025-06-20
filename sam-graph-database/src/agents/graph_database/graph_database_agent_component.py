@@ -6,6 +6,7 @@ import sys
 from typing import Dict, Any, Optional, List
 import yaml
 import json
+import pprint
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
@@ -178,21 +179,24 @@ class GraphDatabaseAgentComponent(BaseAgentComponent):
             try:
                 self.db_handler.import_csv_files(csv_files, csv_directories)
             except Exception as e:
-                log.error("Error importing CSV files: %s", str(e))
+                #log.error("Error importing CSV files: %s", str(e))
+                log.error(f"Error importing CSV files: {str(e)}")
 
         # Get schema information
         if self.auto_detect_schema:
             schema_dict = self._detect_schema()
             print("bo ez schema_dict")
             print()
-            print(json.dumps(schema_dict, indent=2))
+            #print(json.dumps(schema_dict, indent=2))
+            pprint.pprint(schema_dict)
             print()
             print("eo ez schema_dict")
             # Clean the schema before converting to YAML
             schema_dict_cleaned = self._clean_schema(schema_dict)
             print("bo ez schema_dict_cleaned")
             print()
-            print(json.dumps(schema_dict_cleaned, indent=2))
+            #print(json.dumps(schema_dict_cleaned, indent=2))
+            pprint.pprint(schema_dict_cleaned)
             print()
             print("eo ez schema_dict_cleaned")
             # Convert dictionary to YAML string
@@ -200,7 +204,7 @@ class GraphDatabaseAgentComponent(BaseAgentComponent):
             self.detailed_schema = schema_yaml
             print("bo ez schema_yaml")
             print()
-            print(schema_yaml)
+            pprint.pprint(schema_yaml)
             print()
             print("eo ez schema_yaml")
             # Generate schema prompt from detected schema
