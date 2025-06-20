@@ -183,10 +183,26 @@ class GraphDatabaseAgentComponent(BaseAgentComponent):
         # Get schema information
         if self.auto_detect_schema:
             schema_dict = self._detect_schema()
+            print("bo ez schema_dict")
+            print()
+            print(json.dumps(schema_dict, indent=2))
+            print()
+            print("eo ez schema_dict")
             # Clean the schema before converting to YAML
             schema_dict_cleaned = self._clean_schema(schema_dict)
+            print("bo ez schema_dict_cleaned")
+            print()
+            print(json.dumps(schema_dict_cleaned, indent=2))
+            print()
+            print("eo ez schema_dict_cleaned")
             # Convert dictionary to YAML string
-            self.detailed_schema = yaml.dump(schema_dict_cleaned, default_flow_style=False, allow_unicode=True)
+            schema_yaml = yaml.dump(schema_dict_cleaned, default_flow_style=False, allow_unicode=True)
+            self.detailed_schema = schema_yaml
+            print("bo ez schema_yaml")
+            print()
+            print(schema_yaml)
+            print()
+            print("eo ez schema_yaml")
             # Generate schema prompt from detected schema
             self.schema_summary = self._get_schema_summary()
             if not self.schema_summary:
