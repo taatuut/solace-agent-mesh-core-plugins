@@ -60,7 +60,7 @@ class DatabaseService(ABC):
             session = self.driver.session()
             yield session
         except Neo4jError as e:
-            log.error("Database connection error: %s", str(e), exc_info=True)
+            log.error(f"Database connection error: {str(e)}", exc_info=True)
             raise
         finally:
             session.close()
@@ -82,7 +82,7 @@ class DatabaseService(ABC):
                 result = session.run(query)
                 return result.data()
         except Neo4jError as e:
-            log.error("Query execution error: %s", str(e), exc_info=True)
+            log.error(f"Query execution error: {str(e)}", exc_info=True)
             raise
 
     def get_indexes(self, database: str) -> List[Dict[str, Any]]:

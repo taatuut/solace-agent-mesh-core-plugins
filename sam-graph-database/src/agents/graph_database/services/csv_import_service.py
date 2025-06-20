@@ -54,7 +54,7 @@ class CsvImportService:
             try:
                 self._import_csv_file(csv_file)
             except Exception as e:
-                log.error("Error importing CSV file %s: %s", csv_file, str(e))
+                log.error(f"Error importing CSV file {csv_file}: {str(e)}")
 
 
     @staticmethod
@@ -164,7 +164,7 @@ class CsvImportService:
                     self._insert_chunk(table_name, chunk)
 
         except Exception as e:
-            log.error("Error processing CSV file %s: %s", file_path, str(e))
+            log.error(f"Error processing CSV file {file_path}: {str(e)}")
             raise
 
     def _insert_chunk(self, table_name: str, chunk: List[Dict[str, Any]]) -> None:
@@ -188,5 +188,5 @@ class CsvImportService:
                 # Execute with chunk of rows
                 conn.execute(insert_stmt, chunk)
         except Exception as e:
-            log.error("Error inserting chunk into %s: %s", table_name, str(e))
+            log.error(f"Error inserting chunk into {table_name}: {str(e)}")
             raise
