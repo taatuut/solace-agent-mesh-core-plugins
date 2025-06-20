@@ -201,7 +201,8 @@ class GraphDatabaseAgentComponent(BaseAgentComponent):
             print()
             print("eo ez schema_dict_cleaned")
             # Convert dictionary to YAML string
-            schema_yaml = yaml.safe_dump(schema_dict_cleaned, default_flow_style=False, allow_unicode=True)
+            schema_yaml = yaml.dump(schema_dict_cleaned, default_flow_style=False, allow_unicode=True)
+            #schema_yaml = yaml.safe_dump(schema_dict_cleaned, default_flow_style=False, allow_unicode=True)
             self.detailed_schema = schema_yaml
             print("bo ez schema_yaml")
             print()
