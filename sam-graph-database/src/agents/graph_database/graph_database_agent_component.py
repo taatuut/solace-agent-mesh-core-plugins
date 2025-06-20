@@ -280,7 +280,7 @@ class GraphDatabaseAgentComponent(BaseAgentComponent):
 
         def get_schema(tx, *args, **kwargs):
             result = tx.run("CALL db.schema.visualization()")
-            return result.single()
+            return dict(result.single())
 
         with self.db_handler.driver.session() as session:
             schema = session.execute_read(get_schema)
@@ -300,7 +300,8 @@ class GraphDatabaseAgentComponent(BaseAgentComponent):
         Returns:
             Cleaned schema dictionary
         """
-        schema_dict = {}
+
+        # NOTE: no code for checking/cleaning implemented yet, just pass back schema assumign it is ok 
         return schema_dict
 
     def _get_schema_summary(self) -> str:
