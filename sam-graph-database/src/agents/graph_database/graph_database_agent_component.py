@@ -327,7 +327,7 @@ class GraphDatabaseAgentComponent(BaseAgentComponent):
 
         def get_schema(tx, *args, **kwargs):
             result = tx.run("CALL db.schema.visualization()")
-            serialized_schema = dict(serialize_neo4j_schema(result.single()))
+            serialized_schema = serialize_neo4j_schema(dict(result.single()))
             #serialized_schema = dict(serialized_schema.single())
             print("bo ez serialized_schema")
             print()
