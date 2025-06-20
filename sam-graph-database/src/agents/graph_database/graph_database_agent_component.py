@@ -327,12 +327,13 @@ class GraphDatabaseAgentComponent(BaseAgentComponent):
         def get_schema(tx, *args, **kwargs):
             result = tx.run("CALL db.schema.visualization()")
             serialized_schema = serialize_neo4j_schema(result)
-            #return dict(result.single())
+            serialized_schema = dict(serialized_schema.single())
             print("bo ez serialized_schema")
             print()
             pprint.pprint(serialized_schema)
             print()
             print("eo ez serialized_schema")
+            #return dict(result.single())
             return serialized_schema
 
         with self.db_handler.driver.session() as session:
