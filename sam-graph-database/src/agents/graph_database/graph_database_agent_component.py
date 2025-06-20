@@ -186,29 +186,12 @@ class GraphDatabaseAgentComponent(BaseAgentComponent):
         # Get schema information
         if self.auto_detect_schema:
             schema_dict = self._detect_schema()
-            print("bo ez schema_dict")
-            print()
-            #print(json.dumps(schema_dict, indent=2))
-            pprint.pprint(schema_dict)
-            print()
-            print("eo ez schema_dict")
             # Clean the schema before converting to YAML
             schema_dict_cleaned = self._clean_schema(schema_dict)
-            print("bo ez schema_dict_cleaned")
-            print()
-            #print(json.dumps(schema_dict_cleaned, indent=2))
-            pprint.pprint(schema_dict_cleaned)
-            print()
-            print("eo ez schema_dict_cleaned")
             # Convert dictionary to YAML string
-            schema_yaml = yaml.dump(schema_dict_cleaned, default_flow_style=False, allow_unicode=True)
-            #schema_yaml = yaml.safe_dump(schema_dict_cleaned, default_flow_style=False, allow_unicode=True)
+            #schema_yaml = yaml.dump(schema_dict_cleaned, default_flow_style=False, allow_unicode=True)
+            schema_yaml = yaml.safe_dump(schema_dict_cleaned, default_flow_style=False, allow_unicode=True)
             self.detailed_schema = schema_yaml
-            print("bo ez schema_yaml")
-            print()
-            pprint.pprint(schema_yaml)
-            print()
-            print("eo ez schema_yaml")
             # Generate schema prompt from detected schema
             self.schema_summary = self._get_schema_summary()
             if not self.schema_summary:
@@ -328,13 +311,6 @@ class GraphDatabaseAgentComponent(BaseAgentComponent):
         def get_schema(tx, *args, **kwargs):
             result = tx.run("CALL db.schema.visualization()")
             serialized_schema = serialize_neo4j_schema(dict(result.single()))
-            #serialized_schema = dict(serialized_schema.single())
-            print("bo ez serialized_schema")
-            print()
-            pprint.pprint(serialized_schema)
-            print()
-            print("eo ez serialized_schema")
-            #return dict(result.single())
             return serialized_schema
 
         with self.db_handler.driver.session() as session:
