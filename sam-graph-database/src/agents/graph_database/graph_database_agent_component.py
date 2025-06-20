@@ -6,7 +6,6 @@ import sys
 from typing import Dict, Any, Optional, List
 import yaml
 import json
-import pprint
 from neo4j.graph import Node, Relationship
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -189,7 +188,6 @@ class GraphDatabaseAgentComponent(BaseAgentComponent):
             # Clean the schema before converting to YAML
             schema_dict_cleaned = self._clean_schema(schema_dict)
             # Convert dictionary to YAML string
-            #schema_yaml = yaml.dump(schema_dict_cleaned, default_flow_style=False, allow_unicode=True)
             schema_yaml = yaml.safe_dump(schema_dict_cleaned, default_flow_style=False, allow_unicode=True)
             self.detailed_schema = schema_yaml
             # Generate schema prompt from detected schema
