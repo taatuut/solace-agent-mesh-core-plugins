@@ -179,7 +179,6 @@ class GraphDatabaseAgentComponent(BaseAgentComponent):
             try:
                 self.db_handler.import_csv_files(csv_files, csv_directories)
             except Exception as e:
-                #log.error("Error importing CSV files: %s", str(e))
                 log.error(f"Error importing CSV files: {str(e)}")
 
         # Get schema information
