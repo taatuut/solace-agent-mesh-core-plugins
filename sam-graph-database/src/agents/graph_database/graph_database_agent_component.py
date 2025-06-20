@@ -7,6 +7,7 @@ from typing import Dict, Any, Optional, List
 import yaml
 import json
 import pprint
+from neo4j.graph import Node, Relationship
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
@@ -298,9 +299,34 @@ class GraphDatabaseAgentComponent(BaseAgentComponent):
             Dictionary containing detailed schema information
         """
 
+        def serialize_neo4j_schema(raw_schema):
+            def convert(item):
+                if isinstance(item, Node):
+                    return {
+                        "id": item.id,
+                        "labels": list(item.labels),
+                        "properties": dict(item)
+                    }
+                elif isinstance(item, Relationship):
+                    return {
+                        "id": item.id,
+                        "type": item.type,
+                        "start_node": item.start_node.id,
+                        "end_node": item.end_node.id,
+                        "properties": dict(item)
+                    }
+                elif isinstance(item, list):
+                    return [convert(i) for i in item]
+                elif isinstance(item, dict):
+                    return {k: convert(v) for k, v in item.items()}
+                else:
+                    return item
+
         def get_schema(tx, *args, **kwargs):
             result = tx.run("CALL db.schema.visualization()")
-            return dict(result.single())
+            serialized_schema = serialize_neo4j_schema(result)
+            #return dict(result.single())
+            return dict(serialized_schema)
 
         with self.db_handler.driver.session() as session:
             schema = session.execute_read(get_schema)
