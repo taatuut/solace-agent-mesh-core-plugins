@@ -5,6 +5,7 @@ ADK Tools for the Graph Database Agent Plugin.
 from solace_ai_connector.common.log import log
 
 import yaml
+import json
 import csv
 import io
 import asyncio
@@ -13,11 +14,14 @@ from typing import Any, Dict, List, Optional, Literal
 
 from google.adk.tools import ToolContext
 from google.genai import types as adk_types
-
 from typing import TYPE_CHECKING
+
+from .cypher.rewriter import CypherRewriter
+from .cypher.versions import Neo4jVersion, detect_version
 
 if TYPE_CHECKING:
     from .services.database_service import DatabaseService
+
 
 from solace_agent_mesh.agent.utils.context_helpers import get_original_session_id
 from solace_agent_mesh.agent.utils.artifact_helpers import (
@@ -62,8 +66,8 @@ async def execute_cypher_query(
         }
 
     log_identifier = f"[CypherExecuteTool:{tool_context._invocation_context.agent.name}]"
-    log.info(
-        "%s Executing Cypher query. Format: %s, Inline: %s",
+    log.debug(
+        "%s Executing cypher query. Format: %s, Inline: %s",
         log_identifier,
         response_format,
         inline_result,
@@ -81,8 +85,29 @@ async def execute_cypher_query(
         }
 
     db_handler_obj = host_component.get_agent_specific_state("db_handler")
+    db_version = host_component.get_agent_specific_state("db_version")
+    log.debug(
+        "%s Using database handler: %s, version: %s",
+        log_identifier,
+        type(db_handler_obj).__name__ if db_handler_obj else "None",
+        db_version[0] if db_version else "Unknown",
+    )
     db_handler: Optional["DatabaseService"] = db_handler_obj
     db_name: str = host_component.get_agent_specific_state("db_name", None)
+    neo4j_version = detect_version(db_version[0]) if db_version else Neo4jVersion.V4
+    rewriter = CypherRewriter(
+        version=neo4j_version,
+        allow_apoc=False,
+    )
+    safe_query = rewriter.rewrite(query)
+    log.debug(
+        "%s Cypher Query rewritten. Changes: %s",
+        log_identifier,
+        rewriter.changes,
+    )
+    log.debug("%s Cypher Query Rewritten: %s", log_identifier, safe_query)
+
+
     response_guidelines: str = host_component.get_agent_specific_state(
         "db_response_guidelines", ""
     )
@@ -94,7 +119,7 @@ async def execute_cypher_query(
         return {
             "status": "error",
             "error_message": "Database handler not initialized. Cannot execute query.",
-            "cypher_query_attempted": query,
+            "cypher_query_attempted": safe_query,
         }
 
     valid_formats = ["yaml", "json", "csv"]
@@ -102,12 +127,12 @@ async def execute_cypher_query(
         return {
             "status": "error",
             "error_message": f"Invalid response_format '{response_format}'. Must be one of {valid_formats}.",
-            "cypher_query_attempted": query,
+            "cypher_query_attempted": safe_query,
         }
 
     try:
         results: List[Dict[str, Any]] = await asyncio.to_thread(
-            db_handler.execute_query, query, db_name
+            db_handler.execute_query, safe_query, db_name
         )
         log.info(
             "%s Cypher query executed successfully. Number of rows returned: %d",
@@ -179,7 +204,7 @@ async def execute_cypher_query(
         MAX_QUERY_LEN_IN_DESCRIPTION = 1000
         result_description = f"{result_description}\n" if result_description else ""
         save_metadata = {
-            "description": f"{result_description}Results of Cypher query: {query[:MAX_QUERY_LEN_IN_DESCRIPTION]}{'...' if len(query) > MAX_QUERY_LEN_IN_DESCRIPTION else ''}",
+            "description": f"{result_description}Results of Cypher query: {safe_query[:MAX_QUERY_LEN_IN_DESCRIPTION]}{'...' if len(safe_query) > MAX_QUERY_LEN_IN_DESCRIPTION else ''}",
             "response_format": response_format,
             "row_count": len(results),
         }
@@ -233,5 +258,5 @@ async def execute_cypher_query(
         return {
             "status": "error",
             "error_message": error_message,
-            "cypher_query_attempted": query,
+            "cypher_query_attempted": safe_query,
         }

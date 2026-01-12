@@ -141,9 +141,11 @@ def initialize_graph_agent(host_component: Any, init_config: GraphAgentInitConfi
     }
 
     db_service: Optional[DatabaseService] = None
+    db_version: Optional[Tuple[str, int]] = None
     try:
         if init_config.db_type == "neo4j":
             db_service = Neo4jService(connection_params, init_config.query_timeout)
+            db_version = db_service.db_version
         else:
             raise ValueError(f"Unsupported database type: {init_config.db_type}")
 
@@ -152,9 +154,10 @@ def initialize_graph_agent(host_component: Any, init_config: GraphAgentInitConfi
                 f"Failed to initialize DatabaseService driver for type {init_config.db_type}."
             )
         log.info(
-            "%s DatabaseService for type '%s' initialized successfully.",
+            "%s DatabaseService for type '%s' with version %s initialized successfully.",
             log_identifier,
             init_config.db_type,
+            db_version[0],
         )
 
     except Exception as e:
@@ -209,6 +212,7 @@ def initialize_graph_agent(host_component: Any, init_config: GraphAgentInitConfi
 
     try:
         host_component.set_agent_specific_state("db_handler", db_service)
+        host_component.set_agent_specific_state("db_version", db_version)
         host_component.set_agent_specific_state(
             "db_schema_summary_for_prompt", schema_summary_for_llm
         )

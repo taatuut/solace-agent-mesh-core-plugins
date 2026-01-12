@@ -10,6 +10,7 @@ from neo4j.exceptions import Neo4jError
 from neo4j.graph import Node, Relationship
 
 from solace_ai_connector.common.log import log
+from typing import Tuple
 
 
 class DatabaseService(ABC):
@@ -25,11 +26,14 @@ class DatabaseService(ABC):
         self.connection_params = connection_params
         self.query_timeout = query_timeout
         self.driver: Optional[Driver] = None
+        self.db_version: Optional[Tuple[str, int]] = None
         try:
             self.driver = self._create_driver()
+            self.db_version = self._get_db_version()
             log.info(
-                "Database driver created successfully for type: %s",
+                "Database driver created successfully for type: %s with version %s",
                 self.__class__.__name__,
+                self.db_version[0] if self.db_version else "Unknown"
             )
         except Exception as e:
             log.error("Failed to create database driver: %s", e, exc_info=True)
@@ -40,6 +44,15 @@ class DatabaseService(ABC):
 
         Returns:
             Database Driver instance.
+        """
+        pass
+
+    @abstractmethod
+    def _get_db_version(self) -> Tuple[str, int]:
+        """Get database version.
+
+        Returns:
+            Tuple of (full_version_string, major_version_int).
         """
         pass
 
@@ -55,7 +68,7 @@ class DatabaseService(ABC):
             log.warning("No database driver to close.")
 
     @contextmanager
-    def get_session(self, database: Optional[str] = None) -> Generator[Session, None, None]:
+    def _get_session(self, database: Optional[str] = None) -> Generator[Session, None, None]:
         """Get a database session.
 
         Args:
@@ -99,7 +112,7 @@ class DatabaseService(ABC):
         if not self.driver:
             raise RuntimeError("Database driver is not initialized.")
         try:
-            with self.get_session(database=database) as session:
+            with self._get_session(database=database) as session:
                 result = session.run(query)
                 return result.data()
         except Neo4jError as e:
@@ -147,7 +160,7 @@ class DatabaseService(ABC):
             return convert(raw_schema)
 
         try:
-            with self.get_session(database=database) as session:
+            with self._get_session(database=database) as session:
                 result = session.run("CALL db.schema.visualization()")
                 schema_data = dict(result.single())
                 return serialize_neo4j_schema(schema_data)
@@ -172,7 +185,7 @@ class DatabaseService(ABC):
         }
 
         try:
-            with self.get_session(database=database) as session:
+            with self._get_session(database=database) as session:
                 # Get node labels
                 labels_result = session.run("CALL db.labels()")
                 schema["node_labels"] = [record["label"] for record in labels_result]
@@ -262,7 +275,7 @@ class DatabaseService(ABC):
             return "\n".join(schema)
         
         try:
-            with self.get_session(database=database) as session:
+            with self._get_session(database=database) as session:
                 result = get_optimized_schema(session)
                 return result
         except Exception as e:
@@ -326,3 +339,45 @@ class Neo4jService(DatabaseService):
             auth=(user, password) if user and password else None,
             connection_timeout=self.query_timeout,
         )
+
+    def _get_db_version(self) -> Tuple[str, int]:
+        """
+        Detect Neo4j version using dbms.components().
+
+        Returns:
+            (full_version, major_version)
+            e.g. ("5.12.0", 5)
+        """
+        query = """
+        CALL dbms.components()
+        YIELD name, versions, edition
+        WHERE name = 'Neo4j Kernel'
+        UNWIND versions AS version
+        RETURN version
+        """
+
+        try:
+            with self.driver.session() as session:
+                result = session.run(query)
+                record = result.single()
+
+            log.debug("Version query returned record: %s", record)
+
+            if not record:
+                raise RuntimeError("Version query returned no results")
+
+            # Neo4j Record objects need to be accessed directly, not checked with 'in'
+            try:
+                full_version = record["version"]
+            except (KeyError, TypeError) as e:
+                available_keys = list(record.keys()) if record else []
+                raise RuntimeError(
+                    f"Version query result missing 'version' key. Available keys: {available_keys}. Record: {dict(record) if record else None}"
+                ) from e
+
+            major_version = int(full_version.split(".")[0])
+            log.info("Detected Neo4j version: %s", full_version)
+            return full_version, major_version
+        except Exception as e:
+            log.error("Error detecting Neo4j version: %s", e, exc_info=True)
+            raise RuntimeError(f"Unable to determine Neo4j version: {e}") from e
