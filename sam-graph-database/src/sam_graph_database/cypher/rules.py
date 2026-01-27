@@ -5,6 +5,7 @@ import re
 # --------
 
 SIZE_PATTERN = re.compile(r"size\s*\(\s*\((.*?)\)\s*\)", re.IGNORECASE)
+WITH_PATTERN = re.compile(r"with\s*\.", re.IGNORECASE)
 APOC_PATTERN = re.compile(r"\bapoc\.", re.IGNORECASE)
 COUNT_RETURN_PATTERN = re.compile(r"count\s*\{\s*return", re.IGNORECASE)
 COLLECT_RETURN_PATTERN = re.compile(r"collect\s*\{\s*return", re.IGNORECASE)

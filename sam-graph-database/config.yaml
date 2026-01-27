@@ -64,6 +64,7 @@ apps:
         then try to correct the Cypher query and call the tool again.
         If the results are large and the tool indicates they were saved as an artifact, inform the user about the artifact.
         Always use the 'execute_cypher_query' tool to interact with the database.
+        Always report the total execution time for queries when providing results to the user.
 
       # --- Configurable Agent Initialization & Cleanup ---
       agent_init_function:
@@ -92,6 +93,7 @@ apps:
             - "Use DISTINCT, COUNT(DISTINCT x), or collect(DISTINCT x)"
             - "Use COUNT { (pattern) }  instead of size((pattern))"
             - "use COUNT { (pattern) } only if pattern does NOT contain a RETURN"
+            - "Any variable referenced after a WITH must be explicitly passed through that WITH"
           must_not_rules:
             - "Use apoc.coll.toSet()"
             - "Use APOC or other procedures not guaranteed to be available"

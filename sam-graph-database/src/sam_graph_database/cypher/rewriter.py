@@ -1,6 +1,7 @@
 from .versions import Neo4jVersion
 from .rules import (
     SIZE_PATTERN,
+    WITH_PATTERN,
     APOC_PATTERN,
     COUNT_RETURN_PATTERN,
     COLLECT_RETURN_PATTERN,
@@ -9,7 +10,8 @@ from .rules import (
     rewrite_apoc_to_native,
 )
 from .exceptions import UnsafeCypherError
-
+from .utils import extract_variables
+import re
 
 class CypherRewriter:
     """
@@ -45,6 +47,60 @@ class CypherRewriter:
 
         return q
 
+    def _sanitize_with_clause(self, query: str) -> str:
+        """
+        Remove any undefined or phantom variables from WITH clauses.
+        This prevents errors like 'Variable `density_score` not defined'.
+        """
+        parts = query.split("WITH")
+        if len(parts) < 2:
+            return query
+
+        sanitized = parts[0]  # everything before first WITH
+        defined_vars = set()
+
+        for part in parts[1:]:
+            # Split line + rest of query
+            if "\n" in part:
+                line, rest = part.split("\n", 1)
+            else:
+                line, rest = part, ""
+
+            # Extract all comma-separated items
+            items = [i.strip() for i in line.split(",")]
+
+            valid_items = []
+            for item in items:
+                # Get variable being declared or used
+                # Handle aliases: COUNT(r) AS total_edges -> total_edges
+                if " AS " in item.upper():
+                    var = item.upper().split(" AS ")[-1].strip()
+                else:
+                    var = item.split()[-1]
+
+                # Keep if already defined or new expression
+                # Expression detected if contains "(" or "="
+                if var in defined_vars or "(" in item or "=" in item:
+                    valid_items.append(item)
+                    defined_vars.add(var)
+                else:
+                    # skip phantom variable
+                    self.changes.append(f"Removed undefined variable from WITH: {var}")
+
+            sanitized += "WITH " + ", ".join(valid_items) + "\n" + rest
+
+            # Update defined_vars from this line
+            for item in valid_items:
+                # capture declared alias after AS
+                m = re.search(r"AS\s+([a-zA-Z_][a-zA-Z0-9_]*)", item, re.IGNORECASE)
+                if m:
+                    defined_vars.add(m.group(1))
+                # capture variable names used directly
+                for v in extract_variables(item):
+                    defined_vars.add(v)
+
+        return sanitized
+
     def _rewrite_to_string_on_nodes(self, query: str) -> str:
         """
         Rewrite toString(nodeVar) into a safe representation.
@@ -74,12 +130,54 @@ class CypherRewriter:
 
         return TOSTRING_PATTERN.sub(replacer, query)
 
+    def _repair_with_scope(self, query: str) -> str:
+        """
+        Ensure variables used after WITH are preserved.
+        """
+
+        parts = query.split("WITH")
+        if len(parts) < 2:
+            return query  # no WITH → nothing to repair
+
+        before_with = parts[0]
+        after_with = "WITH".join(parts[1:])
+
+        # Extract variables used in RETURN
+        return_match = re.search(r"RETURN\s+(.*)", after_with, re.IGNORECASE | re.DOTALL)
+        if not return_match:
+            return query
+
+        return_vars = extract_variables(return_match.group(1))
+
+        # Extract variables declared in WITH
+        with_line = after_with.split("\n", 1)[0]
+        declared_vars = extract_variables(with_line)
+
+        missing = return_vars - declared_vars
+        if not missing:
+            return query
+
+        # Repair WITH
+        repaired_with = with_line.rstrip() + ", " + ", ".join(sorted(missing))
+        repaired_query = query.replace(with_line, repaired_with, 1)
+
+        self.changes.append(
+            f"Repaired WITH clause to preserve variables: {', '.join(sorted(missing))}"
+        )
+
+        return repaired_query
+
     # ------------------
     # Neo4j 5 rules
     # ------------------
 
     def _rewrite_for_v5(self, query: str) -> str:
         q = query
+
+        # Step 0: sanitize phantom WITH variables
+        if WITH_PATTERN.search(q):
+            q = self._sanitize_with_clause(q)
+            self.changes.append("Rewrote WITH patterns to remove undefined variables")
 
         # 1️⃣ Rewrite size((pattern)) → COUNT { (pattern) }
         if SIZE_PATTERN.search(q):
@@ -103,6 +201,8 @@ class CypherRewriter:
 
         if TOSTRING_PATTERN.search(q):
             q = self._rewrite_to_string_on_nodes(q)
+
+        q = self._repair_with_scope(q)
 
         return q
 

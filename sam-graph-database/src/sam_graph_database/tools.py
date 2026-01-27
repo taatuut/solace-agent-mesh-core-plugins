@@ -105,7 +105,8 @@ async def execute_cypher_query(
         log_identifier,
         rewriter.changes,
     )
-    log.debug("%s Cypher Query Rewritten: %s", log_identifier, safe_query)
+    log.info("%s Original Cypher Query: %s", log_identifier, query)
+    log.info("%s Cypher Query Rewritten: %s", log_identifier, safe_query)
 
 
     response_guidelines: str = host_component.get_agent_specific_state(
